@@ -7,50 +7,61 @@ import mongoose from 'mongoose'
 
 import authRouter from './auth/routes.js'
 import socketioJwt from 'socketio-jwt'
+import appRouter from './app/routes.js'
+import { loginRequiredMiddleware } from './auth/middlewares.js'
+import { Room, RoomValidationSchema } from './app/models.js'
 
 
 dotenv.config()
 
-mongoose.connect( 
-    process.env.DB_URL , 
+mongoose.connect(
+    process.env.DB_URL,
     {
         useUnifiedTopology: true,
         useNewUrlParser: true,
     },
-    ()=>{
+    () => {
         console.log('db is connected')
     }
 )
 
-
 const app = express()
 
-app.use(cors())
+app.use(cors({origin: '*'}))
 app.use(express.json())
 app.use(morgan('tiny'))
 app.use(express.static("public"));
 
 
-app.use('/user', authRouter )
+app.use('/user', authRouter)
+app.use('/room',  loginRequiredMiddleware  , appRouter)
 
 app.use((req, res, next) => {
-    return res.status(404).send({ errors: ['This Route ' + req.url + ' Not found.' ] });
+    return res.status(404).send({ errors: ['This Route ' + req.url + ' Not found.'] });
 });
 
-const server = app.listen(process.env.PORT || 8000)
+const server = app.listen(process.env.PORT || 8000, '0.0.0.0')
 
 const io = socket(server)
 
-var connections = {} 
+var users = {}
 
-io.on('connection', socketioJwt.authorize({
-    secret: process.env.SECRET_KEY,
-    timeout: 15000 // 15 seconds to send the authentication message
-  }))
-  .on('authenticated', (socket) => {
-    //this socket is authenticated, we are good to handle more events from it.
-    var id = socket.decoded_token.id
-    console.log(`hello! ${socket.decoded_token.name}`)
-    connections[id]  = socket
+io.on('connect', (socket) => {
+    socket.on('joinRoom' , (data)=>{
+        console.log('joining ' , socket.id, ' to room: ', data.room)
+        socket.join(data.room)
+    })
+    socket.on('leaveRoom' , (data) =>{
+        console.log('leaving ' , socket.id, ' from room: ', data.room)
+        socket.leave(data.room)
 
-  });
+    })
+    socket.on('message' , async (data)=>{
+        var room = await Room.findOne({_id: data.roomId})
+        room.messages.push({data: data.message})
+        room.save()
+        socket.to(data.roomId).emit('message', data)
+    })
+});
+
+

@@ -5,7 +5,7 @@ export var registerController = async (req, res) => {
 
     try {
         const { error } = await UserRegisterValidationSchema.validate(req.body )
-        if (error) throw { error: error.details[0].message }
+        if (error) return res.status(401).json({ errors: [error.details[0].message] } )
 
         const emailExists = await User.findOne({ email: req.body.email })
         if (emailExists) return  res.status(401).json({ errors: ["Email already exists."] }).status(401)

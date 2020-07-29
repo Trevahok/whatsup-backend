@@ -43,7 +43,8 @@ export const UserSchema = mongoose.Schema({
         enum: ['USER', 'ADMIN'],
         default: 'USER'
 
-    }
+    },
+    rooms: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Room' }]
 
 })
 
