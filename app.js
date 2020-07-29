@@ -9,7 +9,7 @@ import authRouter from './auth/routes.js'
 import socketioJwt from 'socketio-jwt'
 import appRouter from './app/routes.js'
 import { loginRequiredMiddleware } from './auth/middlewares.js'
-import { Room, RoomValidationSchema } from './app/models.js'
+import { Room, RoomValidationSchema, Message } from './app/models.js'
 
 
 dotenv.config()
@@ -44,7 +44,6 @@ const server = app.listen(process.env.PORT || 8000, '0.0.0.0')
 
 const io = socket(server)
 
-var users = {}
 
 io.on('connect', (socket) => {
     socket.on('joinRoom' , (data)=>{
@@ -57,10 +56,16 @@ io.on('connect', (socket) => {
 
     })
     socket.on('message' , async (data)=>{
-        var room = await Room.findOne({_id: data.roomId})
-        room.messages.push({data: data.message})
-        room.save()
-        socket.to(data.roomId).emit('message', data)
+        try {
+            
+            var [ room , message] = await Promise.all( [Room.findOne({_id: data.roomId}), new Message({data: data.message}).save() ] )
+            room.messages.push(message)
+            room.save()
+            io.to(data.roomId).emit('message', message)
+        } catch (error) {
+            console.log(error)
+            
+        }
     })
 });
 

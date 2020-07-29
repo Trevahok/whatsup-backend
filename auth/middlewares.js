@@ -7,6 +7,7 @@ export const loginRequiredMiddleware = (req, res, next) => {
     try {
         const verfied = jwt.verify(token, process.env.SECRET_KEY)
         req.user = verfied
+        //{ _id , token , name }
         next()
 
     } catch (err) {

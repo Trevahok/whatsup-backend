@@ -10,13 +10,12 @@ export const RoomValidationSchema = Joi.object({
     description: Joi.string().optional(),
     messages: Joi.array().items(MessageValidationSchema).optional()
 })
-
-const MessageSchema = mongoose.Schema({
+var MessageSchema = mongoose.Schema({
     data: String,
     from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true })
 
-const RoomSchema = mongoose.Schema({
+var RoomSchema = mongoose.Schema({
     name: { type: String, required: true },
     description: String,
     owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' , required:true},
@@ -25,6 +24,7 @@ const RoomSchema = mongoose.Schema({
         { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
     ]
 }, { timestamps: true });
+
 
 export let Room = mongoose.model('Room', RoomSchema)
 export let Message = mongoose.model('Message', MessageSchema)

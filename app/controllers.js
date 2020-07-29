@@ -4,7 +4,7 @@ import { User} from '../auth/models.js'
 export var detailRoomController = async (req, res) => {
     try {
         var roomid = req.params.id;
-        const instance = await Room.findOne({ _id: roomid })
+        const instance = await Room.findOne({ _id: roomid }).populate('messages')
         res.json(instance || {})
     } catch (err) {
         console.log(err)
@@ -13,11 +13,13 @@ export var detailRoomController = async (req, res) => {
 }
 
 export var listRoomController = async ( req,  res) =>{
-    // TODO: check if the userid from the token is valid and exists
     try {
         var userid = req.user.id
-        var user = await User.findOne({ _id: userid } ).populate('rooms')
+        var user = await User.findOne({ _id: userid } )
+        .populate({ path: 'rooms' , select: 'name participants', populate:{ path: 'participants', model: 'User', select: 'name'} } )
+        if(!user) return res.status(401).json({errors:['Unauthorised access: User does not exist']})
         const instances =  user.rooms
+        console.log(instances)
         res.json(instances)
     } catch (err) {
         console.log(err)
@@ -29,9 +31,37 @@ export var listRoomController = async ( req,  res) =>{
 export var joinRoomController = async (req, res) =>{
     try {
         var userid = req.user.id
-        var user = await User.findOne({ _id: userid } ).populate('rooms')
-        const instances =  user.rooms
-        res.json(instances)
+        var roomid = req.params.id
+
+        var room = await Room.findOne({_id : roomid})
+        if(!room) return res.status(404)
+
+        var user = await User.findOne({ _id: userid } )
+        if(!user) return res.status(401).json({errors:['Unauthorised access: User does not exist']})
+
+        if( !user.rooms.includes(room._id)){
+            user.rooms.push(room)
+            room.participants.push(userid)
+            await Promise.all([room.save(), user.save()])
+        }
+        res.json({room: room})
+    } catch (err) {
+        console.log(err)
+        res.sendStatus(500)
+    }
+
+}
+
+export var listRoomParticipantsController = async (req, res) =>{
+    try{
+        var roomid = req.params.id
+
+        var room = await Room.findOne({_id : roomid})
+        if(!room) return res.status(404)
+
+        return {participants: room.participants}
+
+
     } catch (err) {
         console.log(err)
         res.sendStatus(500)
@@ -50,10 +80,12 @@ export var createRoomController = async (req, res) => {
         const object = new Room({
             ...value,
             owner: user,
+            participants: [user]
         })
 
         var instance = await object.save()
-        user.rooms.push(instance)
+        await user.save()
+            user.rooms.push(instance.toObject())
         await user.save()
         res.status(201).json(instance)
 
