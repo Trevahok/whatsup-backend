@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken'
 export var registerController = async (req, res) => {
 
     try {
-        const { error } = await UserRegisterValidationSchema.validate(req.body )
+        const { error } = UserRegisterValidationSchema.validate(req.body )
         if (error) return res.status(401).json({ errors: [error.details[0].message] } )
 
         const emailExists = await User.findOne({ email: req.body.email })
@@ -27,7 +27,7 @@ export var registerController = async (req, res) => {
 
 export var loginController = async (req, res) => {
     try {
-        const { err } = await UserLoginValidationSchema.validate(req.body ,{ abortEarly: false } )
+        const { err } =  UserLoginValidationSchema.validate(req.body ,{ abortEarly: false } )
         if (err) return res.status(401).json({ errors: err }).status(401)
 
         const user = await User.findOne({ email: req.body.email })
@@ -37,8 +37,8 @@ export var loginController = async (req, res) => {
         if (!validpass) return  res.status(401).json({ errors:[ "Please enter the correct password."] }).status(401)
 
 
-        const token = jwt.sign({ id: user._id  , name: user.name }, process.env.SECRET_KEY)
-        return res.header('Authorization', token).status(200).json({ token: token })
+        const token = jwt.sign({ _id: user._id  , name: user.name }, process.env.SECRET_KEY)
+        return res.header('Authorization', token).status(200).json({ token: token, user : { _id: user._id, name : user.name } }) 
 
     } catch (err) {
 

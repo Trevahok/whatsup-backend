@@ -12,13 +12,12 @@ export const RoomValidationSchema = Joi.object({
 })
 var MessageSchema = mongoose.Schema({
     data: String,
-    from: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    from: String, 
 }, { timestamps: true })
 
 var RoomSchema = mongoose.Schema({
     name: { type: String, required: true },
     description: String,
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User' , required:true},
     messages: [MessageSchema],
     participants: [
         { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
