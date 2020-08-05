@@ -61,7 +61,7 @@ io.on('connect', (socket) => {
             var [ room , message] = await Promise.all( [Room.findOne({_id: data.roomId}), new Message({data: data.message, from: data.from.name}).save() ] )
             room.messages.push(message)
             room.save()
-            io.to(data.roomId).emit('message', message)
+            socket.to(data.roomId).emit('message', message)
         } catch (error) {
             console.log(error)
             
