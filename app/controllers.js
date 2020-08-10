@@ -4,9 +4,9 @@ import { User } from '../auth/models.js'
 export var detailRoomController = async (req, res) => {
     try {
         var roomid = req.params.id;
-        if( !id.match(/^[0-9a-fA-F]{24}$/) ) 
+        if( !roomid.match(/^[0-9a-fA-F]{24}$/) ) 
         return res.status(402).json({ errors: ['Invalid Room ID format.'] })
-        const instance = await Room.findOne({ _id: roomid }).populate('messages')
+        const instance = await Room.findOne({ _id: roomid }).populate({path: 'participants', model:"User", select: "name"})
         if (!instance) return res.status(404).json({ errors: ['No such room found.'] })
 
         res.json(instance || {})
