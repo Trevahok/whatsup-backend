@@ -17,10 +17,11 @@ export var registerController = async (req, res) => {
         })
 
         var instance = await user.save()
-        res.json({  id: instance._id })
+        const token = jwt.sign({ _id: instance._id  , name: instance.name }, process.env.SECRET_KEY)
+        return res.header('Authorization', token).status(200).json({ token: token, user : { _id: instance._id, name : instance.name } }) 
     } catch (err) {
         console.log(err)
-        res.status(400).json(err)
+        res.status(500).json(err)
     }
 
 }
