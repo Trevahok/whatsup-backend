@@ -6,7 +6,7 @@ export var detailRoomController = async (req, res) => {
         var roomid = req.params.id;
         if( !roomid.match(/^[0-9a-fA-F]{24}$/) ) 
         return res.status(402).json({ errors: ['Invalid Room ID format.'] })
-        const instance = await Room.findOne({ _id: roomid }).populate({path: 'participants', model:"User", select: "name"})
+        const instance = await Room.findOne({ _id: roomid }, 'participants createdAt name').populate({path: 'participants', model:"User", select: "name"})
         if (!instance) return res.status(404).json({ errors: ['No such room found.'] })
 
         res.json(instance || {})
@@ -18,7 +18,7 @@ export var detailRoomController = async (req, res) => {
 export var listMessageController = async (req, res) => {
     try {
         var roomid = req.params.id;
-        const instance = await Room.findOne({ _id: roomid }).populate('messages')
+        const instance = await Room.findOne({ _id: roomid }, 'messages').populate('messages')
         res.json(instance || {})
     } catch (err) {
         console.log(err)
@@ -28,6 +28,7 @@ export var listMessageController = async (req, res) => {
 
 
 export var listRoomController = async (req, res) => {
+    // List the rooms the user is part of 
     try {
         var userid = req.user._id
         var user = await User.findOne({ _id: userid })
